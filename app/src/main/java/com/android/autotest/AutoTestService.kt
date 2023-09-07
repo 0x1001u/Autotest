@@ -1,54 +1,73 @@
 package com.android.autotest
 
 import android.accessibilityservice.AccessibilityService
+import android.accessibilityservice.GestureDescription
+import android.graphics.Path
+import android.graphics.Rect
+import android.os.Bundle
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
-import android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
 import android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
 import android.view.accessibility.AccessibilityNodeInfo
 import java.lang.Thread.sleep
 
 class AutoTestService: AccessibilityService() {
     val TAG = javaClass.simpleName
+
     companion object {
-//        const val SEARCH_VIEW_ID = "com.ss.android.ugc.aweme.splash.SplashActivity"
-        const val MAIN_VIEW_ID = "com.ss.android.ugc.aweme.main.MainActivity"
-        const val SEARCH_VIEW_ID = "com.ss.android.ugc.aweme:id/g7_"
+        const val MAIN_ACTIVITY = "com.ss.android.ugc.aweme.main.MainActivity"
+        const val SEARCH_ACTIVITY = "com.ss.android.ugc.aweme.search.activity.SearchResultActivity"
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
-//        Log.d(TAG, "onAccessibilityEvent: $event")
-        if (event.eventType == TYPE_WINDOW_STATE_CHANGED ) {
+        if (event.eventType == TYPE_WINDOW_STATE_CHANGED) {
             when (event.className.toString()) {
-                MAIN_VIEW_ID -> {
+//                MAIN_ACTIVITY -> {
+//                    event.source?.let { source ->
+//                        gestureClick(source.getNodeById("com.ss.android.ugc.aweme:id/jvt")?.parent)
+//                    }
+//                }
+                SEARCH_ACTIVITY -> {
                     event.source?.let { source ->
-                        Log.d(TAG, "Search View ID: $source")
-                        source.getNodeById(SEARCH_VIEW_ID).click()
+                        source.getNodeById("com.ss.android.ugc.aweme:id/fl_intput_hint_container")?.input("防城港")
                     }
                 }
-                else -> {
-                    Log.d(TAG, "Search Null: $event")
-                }
+            }
+        }
+//        val nodeInfo: AccessibilityNodeInfo = when {
+//            rootInActiveWindow != null -> rootInActiveWindow
+//            event?.source != null -> event.source!!
+//            else -> return
+//        }
+//        val searchNode = nodeInfo.findAccessibilityNodeInfosByViewId("com.ss.android.ugc.aweme:id/jvt")
+//        if (searchNode.size>0) {
+//            val searchTemp = searchNode[0].parent
+//            Log.d(TAG, "Search Node: $searchTemp")
+//            gestureClick(searchNode[0].parent)
+//        }
+        when (event?.eventType) {
+            AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED -> {
+                Log.d(TAG,"Notification Change: $event")
+            }
+            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
+                Log.d(TAG, "Window Change: $event")
+            }
+            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> {
+                Log.d(TAG, "Content Change: $event")
             }
         }
     }
 
     override fun onInterrupt() {
-       Log.d(TAG, "onInterrupt")
+        Log.d(TAG, "onInterrupt")
     }
 
-    fun AccessibilityNodeInfo?.click() {
-        if (this == null) return
-        if (this.isClickable) {
-            Log.d(TAG, "Clickable: $this")
-            this.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-            return
-        } else {
-            Log.d(TAG, "Don't Clickable: $this")
-            this.parent.click()
-        }
-    }
 
+    /**
+     * 根据id查找单个节点
+     * @param id 控件id
+     * @return 对应id的节点
+     * */
     fun AccessibilityNodeInfo.getNodeById(id: String): AccessibilityNodeInfo? {
         var count = 0
         while (count < 10) {
@@ -60,4 +79,114 @@ class AutoTestService: AccessibilityService() {
         }
         return null
     }
+
+    /**
+     * 根据id查找多个节点
+     * @param id 控件id
+     * @return 对应id的节点列表
+     * */
+    fun AccessibilityNodeInfo.getNodesById(id: String): List<AccessibilityNodeInfo>? {
+        var count = 0
+        while (count < 10) {
+            findAccessibilityNodeInfosByViewId(id).let {
+                if (!it.isNullOrEmpty()) return it
+            }
+            sleep(100)
+            count++
+        }
+        return null
+    }
+
+    /**
+     * 根据文本查找单个节点
+     * @param text 匹配文本
+     * @param allMatch 是否全匹配，默认false，contains()方式的匹配
+     * @return 匹配文本的节点
+     * */
+    fun AccessibilityNodeInfo.getNodeByText(
+        text: String,
+        allMatch: Boolean = false
+    ): AccessibilityNodeInfo? {
+        var count = 0
+        while (count < 10) {
+            findAccessibilityNodeInfosByText(text).let {
+                if (!it.isNullOrEmpty()) {
+                    if (allMatch) {
+                        it.forEach { node -> if (node.text == text) return node }
+                    } else {
+                        return it[0]
+                    }
+                }
+                sleep(100)
+                count++
+            }
+        }
+        return null
+    }
+
+    /**
+     * 根据文本查找多个节点
+     * @param text 匹配文本
+     * @param allMatch 是否全匹配，默认false，contains()方式的匹配
+     * @return 匹配文本的节点列表
+     * */
+    fun AccessibilityNodeInfo.getNodesByText(
+        text: String,
+        allMatch: Boolean = false
+    ): List<AccessibilityNodeInfo>? {
+        var count = 0
+        while (count < 10) {
+            findAccessibilityNodeInfosByText(text).let {
+                if (!it.isNullOrEmpty()) {
+                    return if (allMatch) {
+                        val tempList = arrayListOf<AccessibilityNodeInfo>()
+                        it.forEach { node -> if (node.text == text) tempList.add(node) }
+                        if (tempList.isEmpty()) null else tempList
+                    } else {
+                        it
+                    }
+                }
+                sleep(100)
+                count++
+            }
+        }
+        return null
+    }
+
+    /**
+     * 获取结点的文本
+     * */
+    fun AccessibilityNodeInfo?.text(): String {
+        return this?.text?.toString() ?: ""
+    }
+
+    /**
+     * 利用手势模拟点击
+     * @param node: 需要点击的节点
+     * */
+    fun AccessibilityService.gestureClick(node: AccessibilityNodeInfo?) {
+        if (node == null) return
+        val tempRect = Rect()
+        node.getBoundsInScreen(tempRect)
+        val x = ((tempRect.left + tempRect.right) / 2).toFloat()
+        val y = ((tempRect.top + tempRect.bottom) / 2).toFloat()
+        dispatchGesture(
+            GestureDescription.Builder().apply {
+                addStroke(GestureDescription.StrokeDescription(Path().apply { moveTo(x, y) }, 0L, 50L))
+            }.build(),
+            object : AccessibilityService.GestureResultCallback() {
+                override fun onCompleted(gestureDescription: GestureDescription?) {
+                    super.onCompleted(gestureDescription)
+                }
+            },
+            null
+        )
+    }
+
+    fun AccessibilityNodeInfo.input(content: String) = performAction(
+        AccessibilityNodeInfo.ACTION_SET_TEXT, Bundle().apply {
+            putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, content)
+        }
+    )
+
 }
