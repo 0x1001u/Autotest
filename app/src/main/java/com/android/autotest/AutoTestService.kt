@@ -22,14 +22,17 @@ class AutoTestService: AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
         if (event.eventType == TYPE_WINDOW_STATE_CHANGED) {
             when (event.className.toString()) {
-//                MAIN_ACTIVITY -> {
-//                    event.source?.let { source ->
-//                        gestureClick(source.getNodeById("com.ss.android.ugc.aweme:id/jvt")?.parent)
-//                    }
-//                }
+                MAIN_ACTIVITY -> {
+                    event.source?.let { source ->
+                        gestureClick(source.getNodeById("com.ss.android.ugc.aweme:id/jvt")?.parent)
+                    }
+                }
                 SEARCH_ACTIVITY -> {
                     event.source?.let { source ->
-                        source.getNodeById("com.ss.android.ugc.aweme:id/fl_intput_hint_container")?.input("防城港")
+                        source.getNodeById("com.ss.android.ugc.aweme:id/et_search_kw")?.input("防城港")
+                        sleep(5000)
+//                        source.fullPrintNode("Search")
+                        gestureClick(source.getNodeById("com.ss.android.ugc.aweme:id/w73"))
                     }
                 }
             }
@@ -45,17 +48,17 @@ class AutoTestService: AccessibilityService() {
 //            Log.d(TAG, "Search Node: $searchTemp")
 //            gestureClick(searchNode[0].parent)
 //        }
-        when (event?.eventType) {
-            AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED -> {
-                Log.d(TAG,"Notification Change: $event")
-            }
-            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
-                Log.d(TAG, "Window Change: $event")
-            }
-            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> {
-                Log.d(TAG, "Content Change: $event")
-            }
-        }
+//        when (event?.eventType) {
+//            AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED -> {
+//                Log.d(TAG,"Notification Change: $event")
+//            }
+//            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
+//                Log.d(TAG, "Window Change: $event")
+//            }
+//            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> {
+//                Log.d(TAG, "Content Change: $event")
+//            }
+//        }
     }
 
     override fun onInterrupt() {
@@ -158,6 +161,20 @@ class AutoTestService: AccessibilityService() {
      * */
     fun AccessibilityNodeInfo?.text(): String {
         return this?.text?.toString() ?: ""
+    }
+
+    /**
+     * 遍历打印结点
+     * */
+    fun AccessibilityNodeInfo?.fullPrintNode(
+        tag: String,
+        spaceCount: Int = 0
+    ) {
+        if (this == null) return
+        val spaceSb = StringBuilder().apply { repeat(spaceCount) { append("  ") } }
+        Log.d("$tag", "$spaceSb$text | $viewIdResourceName | $className | Clickable: $isClickable | Editable: $isEditable")
+        if (childCount == 0) return
+        for (i in 0 until childCount) getChild(i).fullPrintNode(tag, spaceCount + 1)
     }
 
     /**

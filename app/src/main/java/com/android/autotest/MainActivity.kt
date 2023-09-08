@@ -1,9 +1,11 @@
 package com.android.autotest
 
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import com.android.autotest.ui.theme.AutoTestTheme
 
 class MainActivity : ComponentActivity() {
+    val TAG = javaClass.simpleName
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -36,6 +39,16 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+    fun Context.startApp(packageName: String, activityName: String) {
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW).apply {
+                component = ComponentName(packageName, activityName)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            })
+        } catch (e: Exception) {
+            e.message?.let { Log.d(TAG,"$it") }
+        }
+    }
     @Composable
     fun MainView() {
         Column(
@@ -47,7 +60,6 @@ class MainActivity : ComponentActivity() {
 
             Button(onClick = {
                 startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-
             }) {
                Text("Enable Service")
             }
@@ -59,9 +71,7 @@ class MainActivity : ComponentActivity() {
             }
 
             Button(onClick = {
-                startActivity(Intent(Intent.ACTION_VIEW).apply {
-                    component = ComponentName("com.ss.android.ugc.aweme", "com.ss.android.ugc.aweme.splash.SplashActivity")
-                })
+                    startApp("com.ss.android.ugc.aweme", "com.ss.android.ugc.aweme.main.MainActivity")
             }) {
                 Text("Open Target")
             }
