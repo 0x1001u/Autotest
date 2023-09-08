@@ -10,6 +10,7 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
 import android.view.accessibility.AccessibilityNodeInfo
 import java.lang.Thread.sleep
+import kotlin.random.Random
 
 class AutoTestService: AccessibilityService() {
     val TAG = javaClass.simpleName
@@ -17,6 +18,8 @@ class AutoTestService: AccessibilityService() {
     companion object {
         const val MAIN_ACTIVITY = "com.ss.android.ugc.aweme.main.MainActivity"
         const val SEARCH_ACTIVITY = "com.ss.android.ugc.aweme.search.activity.SearchResultActivity"
+        const val USERPROFILE_ACTIVITY = "com.ss.android.ugc.aweme.profile.ui.UserProfileActivity"
+        const val CHATROOM_ACTIVITY = "com.ss.android.ugc.aweme.im.sdk.chat.ChatRoomActivity"
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
@@ -33,6 +36,34 @@ class AutoTestService: AccessibilityService() {
                         sleep(5000)
 //                        source.fullPrintNode("Search")
                         gestureClick(source.getNodeById("com.ss.android.ugc.aweme:id/w73"))
+                        sleep(5000)
+                        gestureClick(source.getNodeById("com.ss.android.ugc.aweme:id/ibn"))
+                    }
+                }
+                USERPROFILE_ACTIVITY -> {
+                    event.source?.let { source ->
+                        sleep(5000)
+                        source.fullPrintNode("Search")
+                        val fansTotal = source.getNodeById("com.ss.android.ugc.aweme:id/x5r").text()
+                        if (fansTotal.endsWith("万")) {
+                            gestureClick(source.getNodeById("com.ss.android.ugc.aweme:id/back_btn"))
+                        } else {
+                            val followed = source.getNodeById("com.ss.android.ugc.aweme:id/p==").text()
+                            if (followed.equals("已关注")) {
+                                gestureClick(source.getNodeById("com.ss.android.ugc.aweme:id/back_btn"))
+                            } else {
+                                gestureClick(source.getNodeById("com.ss.android.ugc.aweme:id/he5"))
+                            }
+                            sleep(2000)
+                            gestureClick(source.getNodeById("com.ss.android.ugc.aweme:id/soa"))
+                        }
+                    }
+                }
+                CHATROOM_ACTIVITY -> {
+                    event.source?.let { source ->
+                        sleep(2000)
+//                        source.getNodeById("com.ss.android.ugc.aweme:id/")?.input("很棒，加油。")
+//                        source.fullPrintNode("Chatroom")
                     }
                 }
             }
@@ -190,6 +221,41 @@ class AutoTestService: AccessibilityService() {
         dispatchGesture(
             GestureDescription.Builder().apply {
                 addStroke(GestureDescription.StrokeDescription(Path().apply { moveTo(x, y) }, 0L, 50L))
+            }.build(),
+            object : AccessibilityService.GestureResultCallback() {
+                override fun onCompleted(gestureDescription: GestureDescription?) {
+                    super.onCompleted(gestureDescription)
+                }
+            },
+            null
+        )
+    }
+    fun gestureSwipe(
+        startX: Int,
+        startY: Int,
+        endX: Int,
+        endY: Int,
+        duration: Long = 50L,
+        randomPosition: Int = 0,
+        randomTime: Long = 0
+    ) {
+        val tempStartX = startX + Random.nextInt(0 - randomPosition, randomPosition + 1)
+        val tempStartY = startY + Random.nextInt(0 - randomPosition, randomPosition + 1)
+        val tempEndX = endX + Random.nextInt(0 - randomPosition, randomPosition + 1)
+        val tempEndY = endY + Random.nextInt(0 - randomPosition, randomPosition + 1)
+        val tempDuration = duration + Random.nextLong(0 - randomTime, randomTime + 1)
+        val swipePath = Path()
+        swipePath.moveTo(
+            if (tempStartX < 0) startX.toFloat() else tempStartX.toFloat(),
+            if (tempStartY < 0) startY.toFloat() else tempStartY.toFloat()
+        )
+        swipePath.lineTo(
+            if (tempEndX < 0) endX.toFloat() else tempEndX.toFloat(),
+            if (tempEndY < 0) endY.toFloat() else tempEndY.toFloat()
+        )
+        dispatchGesture(
+            GestureDescription.Builder().apply {
+                addStroke(GestureDescription.StrokeDescription(swipePath, 0L, tempDuration))
             }.build(),
             object : AccessibilityService.GestureResultCallback() {
                 override fun onCompleted(gestureDescription: GestureDescription?) {

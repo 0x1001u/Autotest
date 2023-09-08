@@ -78,6 +78,3 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
-// function to check the service status
-// open the service
